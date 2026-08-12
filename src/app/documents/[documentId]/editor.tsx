@@ -11,6 +11,7 @@ import TableHeader from "@tiptap/extension-table-header";
 import Underline from "@tiptap/extension-underline";
 import FontFamily from "@tiptap/extension-font-family";
 import TextStyle from "@tiptap/extension-text-style";
+import Link from "@tiptap/extension-link";
 import { Color } from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
@@ -60,6 +61,11 @@ export const Editor = () => {
       Color,
       Highlight.configure({
         multicolor: true,
+      }),
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: "https", 
       }),
       Underline,
       Table,
