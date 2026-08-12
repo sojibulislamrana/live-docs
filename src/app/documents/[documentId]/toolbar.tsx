@@ -8,6 +8,7 @@ import {
   BoldIcon,
   ChevronDownIcon,
   HighlighterIcon,
+  ImageIcon,
   ItalicIcon,
   Link2Icon,
   ListTodoIcon,
@@ -16,20 +17,164 @@ import {
   PrinterIcon,
   Redo2Icon,
   RemoveFormattingIcon,
+  SearchIcon,
   SpellCheckIcon,
   UnderlineIcon,
   Undo2Icon,
+  UploadIcon,
 } from "lucide-react";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { type Level } from "@tiptap/extension-heading";
 import { type ColorResult, SketchPicker } from "react-color";
 import { useState } from "react";
+
+const ImageButton = () => {
+  const { editor } = useEditorStore();
+  const [imageUrl, setImageUrl] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const insertImage = (src: string) => {
+    if (!editor || !src.trim()) return;
+
+    editor
+      .chain()
+      .focus()
+      .setImage({
+        src: src.trim(),
+      })
+      .run();
+  };
+
+  const onUpload = () => {
+    const input = document.createElement("input");
+
+    input.type = "file";
+    input.accept = "image/*";
+
+    input.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+
+      if (!file) return;
+
+      const objectUrl = URL.createObjectURL(file);
+
+      insertImage(objectUrl);
+    };
+
+    input.click();
+  };
+
+  const handleImageUrlSubmit = () => {
+    if (!imageUrl.trim()) return;
+
+    insertImage(imageUrl);
+
+    setImageUrl("");
+    setShowUrlInput(false);
+  };
+
+  return (
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (!open) {
+          setShowUrlInput(false);
+        }
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="h-7 min-w-7 shrink-0 flex items-center justify-center rounded-sm hover:bg-neutral-200/80 px-1.5 overflow-hidden text-sm"
+        >
+          <ImageIcon className="size-4" />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="start"
+        className="w-[340px] bg-white border border-neutral-200 shadow-lg p-2"
+      >
+        {!showUrlInput ? (
+          <>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                onUpload();
+              }}
+              className="cursor-pointer"
+            >
+              <UploadIcon className="size-4 mr-2" />
+              Upload image
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                setShowUrlInput(true);
+              }}
+              className="cursor-pointer"
+            >
+              <SearchIcon className="size-4 mr-2" />
+              Paste image URL
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <div
+            className="flex items-center gap-2 p-1"
+            onKeyDown={(event) => {
+              event.stopPropagation();
+            }}
+          >
+            <Input
+              autoFocus
+              placeholder="https://example.com/image.jpg"
+              value={imageUrl}
+              onChange={(event) => setImageUrl(event.target.value)}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleImageUrlSubmit();
+                }
+              }}
+              className="bg-white"
+            />
+
+            <Button
+              type="button"
+              size="sm"
+              disabled={!imageUrl.trim()}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                handleImageUrlSubmit();
+              }}
+            >
+              Insert
+            </Button>
+          </div>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const LinkButton = () => {
   const { editor } = useEditorStore();
@@ -337,7 +482,7 @@ export const Toolbar = () => {
       <HighlightColorButton />
       <Separator orientation="vertical" className="h-6 bg-neutral-300" />
       <LinkButton />
-      {/* TODO: Image */}
+      <ImageButton />
       {/* TODO: Align  */}
       {/* TODO:  Line Height*/}
       {/* TODO:  List*/}
