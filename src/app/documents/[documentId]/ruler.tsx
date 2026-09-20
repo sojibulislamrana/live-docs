@@ -21,9 +21,8 @@ export const Ruler = () => {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-
-		const PAGE_WIDTH = 816;
-		const MINIMUM_SPACE = 100;
+    const PAGE_WIDTH = 816;
+    const MINIMUM_SPACE = 100;
 
     if ((isDraggingLeft || isDraggingRight) && rulerRef.current) {
       const container = rulerRef.current.querySelector("#ruler-container");
@@ -68,12 +67,9 @@ export const Ruler = () => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      className="h-6 border-b border-gray-300 flex items-end relative select-one print:hidden"
+      className="w-[816px] mx-auto h-6 border-b border-gray-300 flex items-end relative select-one print:hidden"
     >
-      <div
-        className="max-w-[816px] mx-auto w-full h-full relative"
-        id="ruler-container"
-      >
+      <div className="w-full h-full relative" id="ruler-container">
         <Marker
           position={leftMargin}
           isLeft={true}
@@ -145,15 +141,16 @@ const Marker = ({
       onDoubleClick={onDoubleClick}
     >
       <FaCaretDown className="absolute left-1/2 h-full top-0 fill-blue-500 transform -translate-x-1/2" />
-			<div className="absolute left-1/2 top-4 transform -translate-x-1/2 transition-opacity duration-150"
-				style={{
-					height: "100vh",
-					width: "1px",
-					transform: "scaleX(0.5)",
-					backgroundColor: "#3b72f6",
-					display: isDragging ? "block" : "none"
-				}}
-			></div>
+      <div
+        className="absolute left-1/2 top-4 transform -translate-x-1/2 transition-opacity duration-150"
+        style={{
+          height: "100vh",
+          width: "1px",
+          transform: "scaleX(0.5)",
+          backgroundColor: "#3b72f6",
+          display: isDragging ? "block" : "none",
+        }}
+      ></div>
     </div>
   );
 };
