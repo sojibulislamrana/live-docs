@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SearchInput } from "./search-input";
 
 export const Navbar = () => {
   return (
@@ -9,6 +10,10 @@ export const Navbar = () => {
           <Image src="/logo.svg" alt="logo" width={36} height={36} />
         </Link>
         <h3 className="text-xl">LiveDocs</h3>
+      </div>
+      <SearchInput />
+      <div>
+        {/* avatar of profile */}
       </div>
     </nav>
   );
