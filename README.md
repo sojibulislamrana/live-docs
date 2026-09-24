@@ -5,8 +5,8 @@ A light weight multiuser realtime text editor where multiple users can write, ed
 > !!!! ON DEVELOPMENT !!!!
 
 ### Preview
+
+<img src= "public/cover/cover.png">
 <img src= "public/cover/cover2.png">
-
-
 
 Build with ♥︎ by `Sojibul Islam Rana`.
