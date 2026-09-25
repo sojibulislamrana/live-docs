@@ -93,9 +93,7 @@ export const Editor = () => {
       }),
       TaskList,
     ],
-    content: `
-    <p>Md. Sojibul Islam Rana</p>
-      `,
+    content: ``, // Initial Content of the document,
     // immediatelyRender: false,
   });
 
