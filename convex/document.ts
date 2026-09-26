@@ -22,9 +22,28 @@ export const create = mutation({
 });
 
 export const get = query({
-  args: { paginationOpts: paginationOptsValidator },
-  handler: async (ctx, args) => {
-    return await ctx.db.query("document").paginate(args.paginationOpts);
+  args: {
+    paginationOpts: paginationOptsValidator,
+    search: v.optional(v.string()),
+  },
+  handler: async (ctx, { search, paginationOpts }) => {
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    if (search) {
+      return await ctx.db
+        .query("document")
+        .withSearchIndex("search_title", (q) =>
+          q.search("title", search).eq("ownerId", user.subject),
+        )
+        .paginate(paginationOpts);
+    }
+    return await ctx.db
+      .query("document")
+      .withIndex("by_owner_id", (e) => e.eq("ownerId", user.subject))
+      .paginate(paginationOpts);
   },
 });
 

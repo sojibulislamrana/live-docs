@@ -7,11 +7,13 @@ import { TemplateGallery } from "./template-gallary";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { DocumentsTable } from "./documents-table";
+import { useSearchParams } from "@/hooks/use-seach-params";
 
 const Home = () => {
+  const [search] = useSearchParams("");
   const { results, status, loadMore } = usePaginatedQuery(
     api.document.get,
-    {},
+    { search },
     { initialNumItems: 5 },
   );
 
@@ -22,11 +24,11 @@ const Home = () => {
       </div>
       <div className="mt-16">
         <TemplateGallery />
-      <DocumentsTable
-        documents={results}
-        loadMore={loadMore}
-        status={status}
-      />
+        <DocumentsTable
+          documents={results}
+          loadMore={loadMore}
+          status={status}
+        />
       </div>
     </div>
   );
