@@ -15,6 +15,7 @@ import {
 } from "./ui/alert-dialog";
 import { api } from "../../convex/_generated/api";
 import { useState } from "react";
+import { Toast } from "./ui/toast";
 
 interface RemoveDialogProps {
   documentId: Id<"document">;
@@ -44,9 +45,11 @@ export const RemoveDialog = ({ documentId, children }: RemoveDialogProps) => {
             onClick={(e) => {
               e.stopPropagation();
               setIsRemoving(true);
-              remove({ id: documentId }).then(() => {
-                setIsRemoving(false);
-              });
+              remove({ id: documentId })
+                .catch(() => Toast.error("Something Went Wrong"))
+                .then(() => {
+                  setIsRemoving(false);
+                });
             }}
           >
             Delete
