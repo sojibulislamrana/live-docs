@@ -1,3 +1,4 @@
+import { error } from "console";
 import { Editor } from "./editor";
 import { Navbar } from "./navbar";
 import { Room } from "./room";
