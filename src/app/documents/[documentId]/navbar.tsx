@@ -46,6 +46,7 @@ import { toast } from "@/hooks/use-toast";
 import { RenameDialog } from "@/components/rename-dialog";
 import { RemoveDialog } from "@/components/remove-dialog";
 import { Avatars } from "./avatar";
+import { Inbox } from "./inbox";
 
 interface NavbarProps {
   title: string;
@@ -278,10 +279,17 @@ export const Navbar = ({ title, documentId, ownerId }: NavbarProps) => {
         </div>
       </div>
 
-      {/* ── Right side: avatars + org switcher + user button ──────── */}
-      <div className="flex gap-3 items-center pl-6">
-        {/* Live collaborator avatars (only rendered when inside a Liveblocks room) */}
+      {/* ── Right side: avatars | separator | bell + org + user ──── */}
+      <div className="flex items-center gap-2 pl-6">
+        {/* Live collaborator avatars */}
         <Avatars />
+
+        {/* Vertical divider separating active-user avatars from action icons */}
+        <div className="h-6 w-px bg-neutral-300 mx-1" />
+
+        {/* Notifications bell */}
+        <Inbox />
+
         <OrganizationSwitcher
           hidePersonal={false}
           afterCreateOrganizationUrl="/"
