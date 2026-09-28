@@ -33,8 +33,8 @@ export function Room({ children }: { children: ReactNode }) {
             body: JSON.stringify({ userIds }),
           });
           if (!res.ok) return userIds.map(() => undefined);
-          const users: { name: string; avatar: string }[] = await res.json();
-          return users.map((u) => ({ name: u.name, avatar: u.avatar }));
+          const users: { name: string; avatar: string; color: string }[] = await res.json();
+          return users.map((u) => ({ name: u.name, avatar: u.avatar, color: u.color }));
         } catch {
           toast({
             variant: "destructive",

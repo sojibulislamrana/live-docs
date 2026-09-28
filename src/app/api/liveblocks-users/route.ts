@@ -1,5 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getDisplayName } from "@/lib/user-display";
+import { colorForUser } from "@/lib/user-color";
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -18,13 +19,15 @@ export async function POST(req: Request) {
       try {
         const user = await client.users.getUser(id);
         return {
-          name: getDisplayName(user),
+          name:   getDisplayName(user),
           avatar: user.imageUrl,
+          color:  colorForUser(id),
         };
       } catch {
         return {
-          name: "Anonymous",
+          name:   "Anonymous",
           avatar: "",
+          color:  colorForUser(id),
         };
       }
     }),

@@ -279,3 +279,35 @@ body {
     display: none;
   }
 }
+
+/* ─── Liveblocks collaborative cursor & selection colors ──────────────────────
+   The Liveblocks TipTap extension sets inline `border-color` / `background`
+   on .collaboration-cursor__caret and .collaboration-cursor__label using the
+   `color` field from UserMeta.info.  The styles below ensure the caret and
+   label look sharp, and that the remote-user selection overlay picks up the
+   same color via the `--lb-selection` CSS variable that Liveblocks exposes.
+──────────────────────────────────────────────────────────────────────────────── */
+
+/* Cursor caret line — thicker and slightly rounded for visibility */
+.collaboration-cursor__caret {
+  border-inline-width: 2px !important;
+  border-radius: 1px;
+  margin-inline-start: -1px;
+  margin-inline-end:   -1px;
+}
+
+/* Name label above the caret */
+.collaboration-cursor__label {
+  font-size:     11px !important;
+  font-weight:   600 !important;
+  padding:       2px 6px !important;
+  border-radius: 4px 4px 4px 0 !important;
+  letter-spacing: 0.01em;
+  opacity: 0.92;
+  /* background-color is set inline by Liveblocks from userInfo.color */
+}
+
+/* Remote-user text-selection highlight — Liveblocks renders this as an
+   absolutely-positioned overlay with class .lb-tiptap-active-selection.
+   It already has `background: var(--lb-selection, rgba(0,0,255,0.2))`.
+   No extra work needed; color comes from userInfo.color automatically. */

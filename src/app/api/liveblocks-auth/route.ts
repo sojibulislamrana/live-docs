@@ -4,6 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { getDisplayName } from "@/lib/user-display";
+import { colorForUser } from "@/lib/user-color";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const liveblocks = new Liveblocks({
@@ -26,8 +27,6 @@ export async function POST(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // Authenticate the Convex client with the user's JWT so that
-  // getById runs the same canAccessDocument check Convex always applies.
   convex.setAuth(token);
 
   const { room } = await req.json();
@@ -38,17 +37,13 @@ export async function POST(req: Request) {
       id: room as Id<"document">,
     });
   } catch {
-    // Invalid document ID format etc.
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // getById already enforces owner OR same-org access — if it returns null
-  // the user simply doesn't have permission (no need to re-check here).
   if (!document) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // User is authorised — create a Liveblocks session with their real identity.
   const session = liveblocks.prepareSession(user.id, {
     userInfo: {
       name: getDisplayName({
@@ -59,6 +54,8 @@ export async function POST(req: Request) {
         primaryEmailAddress: user.primaryEmailAddress,
       }),
       avatar: user.imageUrl,
+      // Assign a stable color for this user across all rooms.
+      color: colorForUser(user.id),
     },
   });
 

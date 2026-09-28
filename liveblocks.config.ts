@@ -24,6 +24,9 @@ declare global {
         name: string;
         // Clerk profile picture URL.
         avatar: string;
+        // Deterministic color assigned per user — used for cursors,
+        // text selections, and avatar rings.
+        color: string;
       };
     };
 
