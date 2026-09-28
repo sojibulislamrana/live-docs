@@ -11,7 +11,7 @@ const liveblocks = new Liveblocks({
 });
 
 export async function POST(req: Request) {
-  const { userId, orgId, getToken, sessionClaims } = await auth();
+  const { userId, getToken } = await auth();
   if (!userId) {
     return new Response("Unauthorized", { status: 401 });
   }
@@ -26,32 +26,29 @@ export async function POST(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  // Authenticate the Convex client with the user's JWT so that
+  // getById runs the same canAccessDocument check Convex always applies.
   convex.setAuth(token);
 
   const { room } = await req.json();
-  const document = await convex.query(api.document.getById, {
-    id: room as Id<"document">,
-  });
 
+  let document;
+  try {
+    document = await convex.query(api.document.getById, {
+      id: room as Id<"document">,
+    });
+  } catch {
+    // Invalid document ID format etc.
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  // getById already enforces owner OR same-org access — if it returns null
+  // the user simply doesn't have permission (no need to re-check here).
   if (!document) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const organizationId =
-    orgId ??
-    (sessionClaims as { org_id?: string } | null)?.org_id ??
-    undefined;
-  const isOwner = document.ownerId === user.id;
-  const isOrganizationMember = Boolean(
-    document.organizationId &&
-      organizationId &&
-      document.organizationId === organizationId,
-  );
-
-  if (!isOwner && !isOrganizationMember) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
+  // User is authorised — create a Liveblocks session with their real identity.
   const session = liveblocks.prepareSession(user.id, {
     userInfo: {
       name: getDisplayName({
@@ -64,6 +61,7 @@ export async function POST(req: Request) {
       avatar: user.imageUrl,
     },
   });
+
   session.allow(room, session.FULL_ACCESS);
   const { body, status } = await session.authorize();
   return new Response(body, { status });
