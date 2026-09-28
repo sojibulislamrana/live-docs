@@ -14,6 +14,7 @@ import { useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../convex/_generated/api";
 import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export const TemplateGallery = () => {
   const router = useRouter();
@@ -23,8 +24,15 @@ export const TemplateGallery = () => {
   const onTemplateClick = (title: string, initialContent: string) => {
     setIsCreating(true);
     create({ title, initialContent })
-      .then((documentID) => {
-        router.push(`/documents/${documentID}`);
+      .then((documentId) => {
+        toast({ title: "Document created" });
+        router.push(`/documents/${documentId}`);
+      })
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Could not create document",
+        });
       })
       .finally(() => {
         setIsCreating(false);
@@ -32,8 +40,8 @@ export const TemplateGallery = () => {
   };
 
   return (
-    <div className="bg-[#F1F3F4] ">
-      <div className="max-w-screen-xl mx-auto px-16 py-6 flex flex-col pag-y-4">
+    <div className="bg-[#F1F3F4]">
+      <div className="max-w-screen-xl mx-auto px-16 py-6 flex flex-col gap-y-4">
         <h3 className="text-base font-medium">Start a new document</h3>
         <Carousel>
           <CarouselContent className="-ml-4">
@@ -50,15 +58,16 @@ export const TemplateGallery = () => {
                 >
                   <Button
                     disabled={isCreating}
-                    // TODO: Add proper initial content
-                    onClick={() => onTemplateClick(template.label, "")}
+                    onClick={() =>
+                      onTemplateClick(template.label, template.initialContent)
+                    }
                     style={{
                       backgroundImage: `url(${template.imageUrl})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                       backgroundRepeat: "no-repeat",
                     }}
-                    className="size-full border-white  hover:border-blue-500 rounded-sm border hover:bg-blue-50 transition flex felx-col items-center justify-center gap-y-4 bg-white"
+                    className="size-full border-white hover:border-blue-500 rounded-sm border hover:bg-blue-50 transition flex flex-col items-center justify-center gap-y-4 bg-white"
                   />
                   <p className="text-sm font-medium truncate text-center">
                     {template.label}
@@ -67,8 +76,8 @@ export const TemplateGallery = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious className="bg-white" />
+          <CarouselNext className="bg-white" />
         </Carousel>
       </div>
     </div>

@@ -1,9 +1,91 @@
-import {BsCloudCheck} from "react-icons/bs"
-export const DocumentInput = () => {
+"use client";
+
+import { useMutation } from "convex/react";
+import { BsCloudCheck, BsCloudSlash } from "react-icons/bs";
+import { useRef, useState, useEffect } from "react";
+import { Id } from "../../../../convex/_generated/dataModel";
+import { api } from "../../../../convex/_generated/api";
+import { useStatus } from "@liveblocks/react";
+import { toast } from "@/hooks/use-toast";
+
+interface DocumentInputProps {
+  title: string;
+  id: Id<"document">;
+}
+
+export const DocumentInput = ({ title, id }: DocumentInputProps) => {
+  const status = useStatus();
+  const [value, setValue] = useState(title);
+  const [isPending, setIsPending] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+  const mutate = useMutation(api.document.updateById);
+
+  useEffect(() => {
+    setValue(title);
+  }, [title]);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+  };
+
+  const onSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
+    const nextTitle = value.trim() || "Untitled document";
+    if (nextTitle === title) {
+      setIsEditing(false);
+      return;
+    }
+    setIsPending(true);
+    mutate({ id, title: nextTitle })
+      .then(() => {
+        toast({ title: "Document renamed" });
+        setIsEditing(false);
+      })
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Could not rename document",
+          description:
+            "You need to be the owner or a member of this document's organization.",
+        });
+      })
+      .finally(() => setIsPending(false));
+  };
+
+  const showLoader =
+    isPending || status === "connecting" || status === "reconnecting";
+  const showError = status === "disconnected";
+
   return (
     <div className="flex items-center gap-2">
-      <span className="text-lg px-1.5 cursor-pointer truncate">Untitled document</span>
-      <BsCloudCheck/>
+      {isEditing ? (
+        <form onSubmit={onSubmit} className="relative w-fit max-w-[50ch]">
+          <span className="invisible whitespace-pre px-1.5 text-lg">
+            {value || " "}
+          </span>
+          <input
+            ref={inputRef}
+            value={value}
+            onChange={onChange}
+            onBlur={() => onSubmit()}
+            className="absolute inset-0 text-lg text-black px-1.5 bg-transparent truncate"
+          />
+        </form>
+      ) : (
+        <span
+          onClick={() => {
+            setIsEditing(true);
+            setTimeout(() => inputRef.current?.focus(), 0);
+          }}
+          className="text-lg px-1.5 cursor-pointer truncate"
+        >
+          {title}
+        </span>
+      )}
+      {showError && <BsCloudSlash className="size-4" />}
+      {!showError && !showLoader && <BsCloudCheck />}
     </div>
   );
-}
+};

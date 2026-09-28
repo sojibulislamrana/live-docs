@@ -1,6 +1,8 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
 
 import {
   Menubar,
@@ -23,7 +25,6 @@ import {
   FilePlusIcon,
   FileTextIcon,
   GlobeIcon,
-  InspectIcon,
   ItalicIcon,
   PrinterIcon,
   Redo2Icon,
@@ -37,11 +38,23 @@ import {
 } from "lucide-react";
 import { BsFilePdf } from "react-icons/bs";
 import { useEditorStore } from "@/store/use-editor-store";
-import { blob } from "stream/consumers";
 import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
+import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
+import { toast } from "@/hooks/use-toast";
+import { RenameDialog } from "@/components/rename-dialog";
+import { RemoveDialog } from "@/components/remove-dialog";
 
-export const Navbar = () => {
+interface NavbarProps {
+  title: string;
+  documentId: Id<"document">;
+}
+
+export const Navbar = ({ title, documentId }: NavbarProps) => {
+  const router = useRouter();
   const { editor } = useEditorStore();
+  const create = useMutation(api.document.create);
+
   const insertTable = ({ rows, cols }: { rows: number; cols: number }) => {
     editor
       ?.chain()
@@ -56,6 +69,7 @@ export const Navbar = () => {
     a.href = url;
     a.download = filename;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const onSaveJSON = () => {
@@ -64,7 +78,7 @@ export const Navbar = () => {
     const blob = new Blob([JSON.stringify(content)], {
       type: "application/json",
     });
-    onDownload(blob, `document.json`); // TODO: use document name
+    onDownload(blob, `${title}.json`);
   };
 
   const onSaveHTML = () => {
@@ -73,16 +87,32 @@ export const Navbar = () => {
     const blob = new Blob([content], {
       type: "text/html",
     });
-    onDownload(blob, `document.json`); // TODO: use document name
+    onDownload(blob, `${title}.html`);
   };
+
   const onSaveText = () => {
     if (!editor) return;
     const content = editor.getText();
     const blob = new Blob([content], {
       type: "text/plain",
     });
-    onDownload(blob, `document.txt`); // TODO: use document name
+    onDownload(blob, `${title}.txt`);
   };
+
+  const onNewDocument = () => {
+    create({})
+      .then((id) => {
+        toast({ title: "Document created" });
+        router.push(`/documents/${id}`);
+      })
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Could not create document",
+        });
+      });
+  };
+
   return (
     <nav className="flex items-center justify-between">
       <div className="flex gap-2 items-center">
@@ -90,20 +120,20 @@ export const Navbar = () => {
           <Image src="/logo.svg" alt="logo" width={36} height={36} />
         </Link>
         <div className="flex flex-col">
-          <DocumentInput />
+          <DocumentInput title={title} id={documentId} />
           <div className="flex">
-            <Menubar className="border-none  bg-white shadow-none h-auto p-0">
+            <Menubar className="border-none bg-white shadow-none h-auto p-0">
               <MenubarMenu>
                 <MenubarTrigger className="text-sm font-normal py-0.5 px-[7px] rounded-sm hover:bg-muted">
                   File
                 </MenubarTrigger>
-                <MenubarContent className="print:hidden">
+                <MenubarContent className="print:hidden bg-white">
                   <MenubarSub>
                     <MenubarSubTrigger>
                       <FileIcon className="size-4 mr-2" />
                       Save
                     </MenubarSubTrigger>
-                    <MenubarSubContent>
+                    <MenubarSubContent className="bg-white">
                       <MenubarItem onClick={onSaveJSON}>
                         <FileJsonIcon className="size-4 mr-2" />
                         JSON
@@ -122,24 +152,34 @@ export const Navbar = () => {
                       </MenubarItem>
                       <MenubarItem onClick={onSaveText}>
                         <FileTextIcon className="size-4 mr-2" />
-                        TEXT
+                        Text
                       </MenubarItem>
                     </MenubarSubContent>
                   </MenubarSub>
-                  <MenubarItem>
+                  <MenubarItem onClick={onNewDocument}>
                     <FilePlusIcon className="size-4 mr-2" />
-                    New Document
+                    New document
                   </MenubarItem>
                   <MenubarSeparator />
-                  <MenubarItem>
-                    <FilePenIcon className="size-4 mr-2" />
-                    Rename
-                  </MenubarItem>
+                  <RenameDialog documentId={documentId} initialTitle={title}>
+                    <MenubarItem
+                      onSelect={(e) => e.preventDefault()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <FilePenIcon className="size-4 mr-2" />
+                      Rename
+                    </MenubarItem>
+                  </RenameDialog>
                   <MenubarSeparator />
-                  <MenubarItem>
-                    <TrashIcon className="size-4 mr-2" />
-                    Remove
-                  </MenubarItem>
+                  <RemoveDialog documentId={documentId}>
+                    <MenubarItem
+                      onSelect={(e) => e.preventDefault()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <TrashIcon className="size-4 mr-2" />
+                      Remove
+                    </MenubarItem>
+                  </RemoveDialog>
                   <MenubarItem onClick={() => window.print()}>
                     <PrinterIcon className="size-4 mr-2" />
                     Print <MenubarShortcut>⌘P</MenubarShortcut>
@@ -151,7 +191,7 @@ export const Navbar = () => {
                   Edit
                 </MenubarTrigger>
 
-                <MenubarContent>
+                <MenubarContent className="bg-white">
                   <MenubarItem
                     onClick={() => {
                       editor?.chain().focus().undo().run();
@@ -166,7 +206,7 @@ export const Navbar = () => {
                     }}
                   >
                     <Redo2Icon className="size-4 mr-2" />
-                    Redo <MenubarShortcut>⌘R</MenubarShortcut>
+                    Redo <MenubarShortcut>⌘Y</MenubarShortcut>
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>
@@ -174,13 +214,13 @@ export const Navbar = () => {
                 <MenubarTrigger className="text-sm font-normal py-0.5 px-[7px] rounded-sm hover:bg-muted">
                   Insert
                 </MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="bg-white">
                   <MenubarSub>
                     <MenubarSubTrigger>
                       <TableIcon className="size-4 mr-2" />
                       Table
                     </MenubarSubTrigger>
-                    <MenubarSubContent>
+                    <MenubarSubContent className="bg-white">
                       <MenubarItem
                         onClick={() => {
                           insertTable({ rows: 1, cols: 1 });
@@ -217,13 +257,13 @@ export const Navbar = () => {
                 <MenubarTrigger className="text-sm font-normal py-0.5 px-[7px] rounded-sm hover:bg-muted">
                   Format
                 </MenubarTrigger>
-                <MenubarContent>
+                <MenubarContent className="bg-white">
                   <MenubarSub>
                     <MenubarSubTrigger>
                       <TextIcon className="mr-2 size-4" />
                       Text
                     </MenubarSubTrigger>
-                    <MenubarSubContent>
+                    <MenubarSubContent className="bg-white">
                       <MenubarItem
                         onClick={() => {
                           editor?.chain().focus().toggleBold().run();
@@ -254,7 +294,7 @@ export const Navbar = () => {
                         }}
                       >
                         <StrikethroughIcon className="size-4 mr-2" />
-                        Strike Through <MenubarShortcut>⌘S</MenubarShortcut>
+                        Strikethrough
                       </MenubarItem>
                     </MenubarSubContent>
                   </MenubarSub>
@@ -264,7 +304,7 @@ export const Navbar = () => {
                     }}
                   >
                     <RemoveFormattingIcon className="size-4 mr-2" />
-                    Clear Format
+                    Clear formatting
                   </MenubarItem>
                 </MenubarContent>
               </MenubarMenu>

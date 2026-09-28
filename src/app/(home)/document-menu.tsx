@@ -12,8 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RemoveDialog } from "@/components/remove-dialouge";
-import { RenameDialog } from "@/components/rename-dialouge";
+import { RemoveDialog } from "@/components/remove-dialog";
+import { RenameDialog } from "@/components/rename-dialog";
 
 interface DocumentMenuProps {
   documentId: Id<"document">;
@@ -28,11 +28,16 @@ export const DocumentMenu = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          onClick={(e) => e.stopPropagation()}
+        >
           <MoreVertical className="size-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent className="bg-white" onClick={(e) => e.stopPropagation()}>
         <RenameDialog documentId={documentId} initialTitle={title}>
           <DropdownMenuItem
             onSelect={(e) => e.preventDefault()}

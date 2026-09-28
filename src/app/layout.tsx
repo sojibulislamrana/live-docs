@@ -13,7 +13,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Live Doc",
-  description: "A light weight multi-user document editor",
+  description: "A lightweight multi-user document editor",
 };
 
 export default function RootLayout({

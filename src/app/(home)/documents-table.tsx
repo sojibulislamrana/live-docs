@@ -24,7 +24,7 @@ export const DocumentsTable = ({
   status,
 }: DocumentsTableProps) => {
   return (
-    <div className="max-w-screen-xl mx-auto px-16  py-6 flex flex-col gap-6">
+    <div className="max-w-screen-xl mx-auto px-16 py-6 flex flex-col gap-6">
       {documents === undefined ? (
         <div className="flex items-center justify-center h-24">
           <LoaderIcon className="animate-spin text-muted-foreground size-5" />
@@ -32,7 +32,7 @@ export const DocumentsTable = ({
       ) : (
         <Table>
           <TableHeader>
-            <TableRow className=" hover:bg-transparent border-none">
+            <TableRow className="hover:bg-transparent border-none">
               <TableHead>Name</TableHead>
               <TableHead>&nbsp;</TableHead>
               <TableHead className="hidden md:table-cell">Shared</TableHead>
@@ -41,7 +41,7 @@ export const DocumentsTable = ({
           </TableHeader>
           {documents.length === 0 ? (
             <TableBody>
-              <TableRow className="hover: bg-transparent">
+              <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={4}
                   className="text-center h-24 text-muted-foreground"
@@ -59,14 +59,14 @@ export const DocumentsTable = ({
           )}
         </Table>
       )}
-      <div className="flex flex-items justify-center">
+      <div className="flex items-center justify-center">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => loadMore(5)}
           disabled={status !== "CanLoadMore"}
         >
-          {status === "CanLoadMore" ? "LoadMore" : "End of results"}
+          {status === "CanLoadMore" ? "Load more" : "End of results"}
         </Button>
       </div>
     </div>

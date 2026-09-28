@@ -2,6 +2,7 @@ import { Liveblocks } from "@liveblocks/node";
 import { ConvexHttpClient } from "convex/browser";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { api } from "../../../../convex/_generated/api";
+import { Id } from "../../../../convex/_generated/dataModel";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const liveblocks = new Liveblocks({
@@ -9,8 +10,8 @@ const liveblocks = new Liveblocks({
 });
 
 export async function POST(req: Request) {
-  const { sessionClaims } = await auth();
-  if (!sessionClaims) {
+  const { userId, orgId, getToken, sessionClaims } = await auth();
+  if (!userId) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -19,17 +20,32 @@ export async function POST(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  const token = await getToken({ template: "convex" });
+  if (!token) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  convex.setAuth(token);
+
   const { room } = await req.json();
-  const document = await convex.query(api.document.getById, { id: room });
+  const document = await convex.query(api.document.getById, {
+    id: room as Id<"document">,
+  });
 
   if (!document) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  const organizationId =
+    orgId ??
+    (sessionClaims as { org_id?: string } | null)?.org_id ??
+    undefined;
   const isOwner = document.ownerId === user.id;
-  const isOrganizationMember =
-    document.organizationId !== undefined &&
-    document.organizationId === sessionClaims.org_id;
+  const isOrganizationMember = Boolean(
+    document.organizationId &&
+      organizationId &&
+      document.organizationId === organizationId,
+  );
 
   if (!isOwner && !isOrganizationMember) {
     return new Response("Unauthorized", { status: 401 });
@@ -37,7 +53,7 @@ export async function POST(req: Request) {
 
   const session = liveblocks.prepareSession(user.id, {
     userInfo: {
-      name: user.fullName ?? "Anonymous",
+      name: user.fullName ?? user.primaryEmailAddress?.emailAddress ?? "Anonymous",
       avatar: user.imageUrl,
     },
   });

@@ -15,8 +15,9 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { toast } from "@/hooks/use-toast";
 
-interface RemoveDialogProps {
+interface RenameDialogProps {
   documentId: Id<"document">;
   children: React.ReactNode;
   initialTitle: string;
@@ -26,37 +27,63 @@ export const RenameDialog = ({
   documentId,
   children,
   initialTitle,
-}: RemoveDialogProps) => {
+}: RenameDialogProps) => {
   const update = useMutation(api.document.updateById);
   const [isUpdating, setIsUpdating] = useState(false);
-
   const [title, setTitle] = useState(initialTitle);
   const [open, setOpen] = useState(false);
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsUpdating(true);
 
-    update({ id: documentId, title: title.trim() || "Untitled" }).finally(
-      () => {
-        setIsUpdating(false);
+    update({
+      id: documentId,
+      title: title.trim() || "Untitled document",
+    })
+      .then(() => {
+        toast({
+          title: "Document renamed",
+          description: "The new title was saved.",
+        });
         setOpen(false);
-      },
-    );
+      })
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Could not rename document",
+          description:
+            "You need to be the owner or a member of this document's organization.",
+        });
+      })
+      .finally(() => {
+        setIsUpdating(false);
+      });
   };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) {
+          setTitle(initialTitle);
+        }
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
+        className="bg-white"
         onClick={(e) => {
-          e.preventDefault();
+          e.stopPropagation();
         }}
       >
         <form onSubmit={onSubmit}>
           <DialogHeader>
-            <DialogTitle>Rename Document</DialogTitle>
+            <DialogTitle>Rename document</DialogTitle>
             <DialogDescription>
-              Enter a new name for the document
+              Enter a new name for the document.
             </DialogDescription>
           </DialogHeader>
           <div className="my-4">
@@ -88,7 +115,7 @@ export const RenameDialog = ({
                 e.stopPropagation();
               }}
             >
-              Save
+              {isUpdating ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </form>

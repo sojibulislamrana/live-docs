@@ -1,6 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { title } from "process";
 
 export default defineSchema({
   document: defineTable({
@@ -9,12 +8,11 @@ export default defineSchema({
     ownerId: v.string(),
     roomId: v.optional(v.string()),
     organizationId: v.optional(v.string()),
-
   })
-  .index("by_owner_id", ["ownerId"])
-  .index("by_organization_id", ["organizationId"])
-  .searchIndex("search_title", {
-    searchField:"title",
-    filterFields: ["ownerId", "organizationId"]
-  })
+    .index("by_owner_id", ["ownerId"])
+    .index("by_organization_id", ["organizationId"])
+    .searchIndex("search_title", {
+      searchField: "title",
+      filterFields: ["ownerId", "organizationId"],
+    }),
 });

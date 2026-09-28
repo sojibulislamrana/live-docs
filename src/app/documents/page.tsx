@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
+
 const DocumentsPage = () => {
-  return <div>Documents Page</div>;
+  redirect("/");
 };
 
 export default DocumentsPage;
