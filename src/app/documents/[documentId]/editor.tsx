@@ -22,6 +22,7 @@ import { FontSizeExtension } from "@/extensions/font-size";
 import { LineHeightExtension } from "@/extensions/line-height";
 import { Ruler } from "./ruler";
 import { useLiveblocksExtension } from "@liveblocks/react-tiptap";
+import { useUpdateMyPresence } from "@liveblocks/react/suspense";
 import { Threads } from "./threads";
 
 interface EditorProps {
@@ -31,8 +32,10 @@ interface EditorProps {
 export const Editor = ({ initialContent }: EditorProps) => {
   const liveblocks = useLiveblocksExtension({
     initialContent,
+    offlineSupport_experimental: true,
   });
   const { setEditor } = useEditorStore();
+  const updateMyPresence = useUpdateMyPresence();
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -106,7 +109,15 @@ export const Editor = ({ initialContent }: EditorProps) => {
   });
 
   return (
-    <div className="size-full overflow-x-auto bg-[#FAFBFD] px-4 print:p-0 print:bg-white print:overflow-visible">
+    <div
+      className="size-full overflow-x-auto bg-[#FAFBFD] px-4 print:p-0 print:bg-white print:overflow-visible"
+      onPointerMove={(e) => {
+        updateMyPresence({ cursor: { x: Math.round(e.clientX), y: Math.round(e.clientY) } });
+      }}
+      onPointerLeave={() => {
+        updateMyPresence({ cursor: null });
+      }}
+    >
       <Ruler />
       <div className="min-w-max flex justify-center w-[816px] py-4 print:py-0 mx-auto print:w-full print:min-w-0">
         <EditorContent editor={editor} />

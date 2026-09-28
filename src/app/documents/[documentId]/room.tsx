@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode } from "react";
 import {
   LiveblocksProvider,
   RoomProvider,
@@ -8,58 +8,55 @@ import {
 } from "@liveblocks/react/suspense";
 import { useParams } from "next/navigation";
 import { FullScreenLoader } from "@/components/fullscreen-loader";
-import { getUsers } from "./actions";
 import { useToast } from "@/hooks/use-toast";
-
-type User = { id: string; name: string; avatar: string };
 
 export function Room({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const params = useParams();
-  const [user, setUser] = useState<User[]>([]);
-  const fetUser = useMemo(
-    () => async () => {
-      try {
-        const list = await getUsers();
-        setUser(list);
-      } catch {
-        toast({
-          variant: "destructive",
-          title: "Failed to fetch users!",
-          description: "ABCD",
-        });
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    fetUser();
-  }, [fetUser]);
 
   return (
     <LiveblocksProvider
       authEndpoint="/api/liveblocks-auth"
       throttle={16}
-      resolveUsers={({ userIds }) => {
-        return userIds.map(
-          (userId) => user.find((user) => user.id === userId) ?? undefined,
-        );
-      }}
-      resolveMentionSuggestions={({ text }) => {
-        let filteredUser = user;
-
-        if (text) {
-          filteredUser = user.filter((user) =>
-            user.name.toLowerCase().includes(text.toLowerCase()),
-          );
+      resolveUsers={async ({ userIds }) => {
+        // Call our server-side route that resolves Clerk user info by id.
+        // This fixes the personal-mode bug where getUsers() returned nothing
+        // because there was no org_id to pass to getUserList.
+        try {
+          const res = await fetch("/api/liveblocks-users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userIds }),
+          });
+          if (!res.ok) return userIds.map(() => undefined);
+          const users: { name: string; avatar: string }[] = await res.json();
+          return users.map((u) => ({ name: u.name, avatar: u.avatar }));
+        } catch {
+          toast({
+            variant: "destructive",
+            title: "Could not resolve collaborators",
+          });
+          return userIds.map(() => undefined);
         }
-
-        return filteredUser.map((user) => user.id);
+      }}
+      resolveMentionSuggestions={async ({ text }) => {
+        // Fetch org members (or current user in personal mode) for @mentions.
+        try {
+          const res = await fetch("/api/liveblocks-mention-suggestions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          if (!res.ok) return [];
+          const suggestions: { id: string }[] = await res.json();
+          return suggestions.map((s) => s.id);
+        } catch {
+          return [];
+        }
       }}
       resolveRoomsInfo={() => []}
     >
-      <RoomProvider id={params.documentId as string}>
+      <RoomProvider id={params.documentId as string} initialPresence={{ cursor: null }}>
         <ClientSideSuspense
           fallback={<FullScreenLoader label="Room loading ..." />}
         >

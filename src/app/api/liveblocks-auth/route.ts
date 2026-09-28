@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
+import { getDisplayName } from "@/lib/user-display";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const liveblocks = new Liveblocks({
@@ -53,7 +54,13 @@ export async function POST(req: Request) {
 
   const session = liveblocks.prepareSession(user.id, {
     userInfo: {
-      name: user.fullName ?? user.primaryEmailAddress?.emailAddress ?? "Anonymous",
+      name: getDisplayName({
+        fullName: user.fullName,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        primaryEmailAddress: user.primaryEmailAddress,
+      }),
       avatar: user.imageUrl,
     },
   });

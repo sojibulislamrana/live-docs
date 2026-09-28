@@ -85,8 +85,11 @@ export const removeById = mutation({
       throw new ConvexError("Document not found");
     }
 
-    if (!canAccessDocument(user, document)) {
-      throw new ConvexError("Unauthorized");
+    // Only the document owner can permanently delete it.
+    // Organization members can edit/rename but cannot delete documents
+    // they don't own — mirrors Google Docs behaviour.
+    if (document.ownerId !== user.subject) {
+      throw new ConvexError("Only the document owner can delete it");
     }
 
     return await ctx.db.delete(args.id);

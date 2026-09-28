@@ -67,7 +67,7 @@ export const RemoveDialog = ({ documentId, children }: RemoveDialogProps) => {
                     variant: "destructive",
                     title: "Could not delete document",
                     description:
-                      "You need to be the owner or a member of this document's organization.",
+                      "Only the document owner can delete it.",
                   });
                 })
                 .finally(() => {
