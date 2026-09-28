@@ -33,6 +33,9 @@ export const Editor = ({ initialContent }: EditorProps) => {
   const liveblocks = useLiveblocksExtension({
     initialContent,
     offlineSupport_experimental: true,
+    // Enable @mention support — Liveblocks uses resolveMentionSuggestions
+    // from LiveblocksProvider to fetch the candidate list as the user types.
+    mentions: true,
   });
   const { setEditor } = useEditorStore();
   const updateMyPresence = useUpdateMyPresence();

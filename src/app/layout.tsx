@@ -14,6 +14,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Live Doc",
   description: "A lightweight multi-user document editor",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
