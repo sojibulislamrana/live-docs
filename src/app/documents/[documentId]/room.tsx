@@ -16,20 +16,16 @@ export function Room({ children }: { children: ReactNode }) {
 
   return (
     <LiveblocksProvider
-      authEndpoint={async ()=> {const endpoint = "/api/liveblocks-auth";
+      authEndpoint={async () => {
         const room = params.documentId as string;
-
-        const response = await fetch(endpoint, {
+        const response = await fetch("/api/liveblocks-auth", {
           method: "POST",
-          body: JSON.stringify({room})
-        })
+          body: JSON.stringify({ room }),
+        });
         return await response.json();
       }}
       throttle={16}
       resolveUsers={async ({ userIds }) => {
-        // Call our server-side route that resolves Clerk user info by id.
-        // This fixes the personal-mode bug where getUsers() returned nothing
-        // because there was no org_id to pass to getUserList.
         try {
           const res = await fetch("/api/liveblocks-users", {
             method: "POST",
@@ -48,7 +44,6 @@ export function Room({ children }: { children: ReactNode }) {
         }
       }}
       resolveMentionSuggestions={async ({ text }) => {
-        // Fetch org members (or current user in personal mode) for @mentions.
         try {
           const res = await fetch("/api/liveblocks-mention-suggestions", {
             method: "POST",
@@ -64,7 +59,11 @@ export function Room({ children }: { children: ReactNode }) {
       }}
       resolveRoomsInfo={() => []}
     >
-      <RoomProvider id={params.documentId as string} initialPresence={{ cursor: null }}>
+      <RoomProvider
+        id={params.documentId as string}
+        initialPresence={{ cursor: null }}
+        initialStorage={{ leftMargin: 56, rightMargin: 56 }}
+      >
         <ClientSideSuspense
           fallback={<FullScreenLoader label="Room loading ..." />}
         >

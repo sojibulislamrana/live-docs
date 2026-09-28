@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TaskItem from "@tiptap/extension-task-item";
@@ -22,8 +23,10 @@ import { FontSizeExtension } from "@/extensions/font-size";
 import { LineHeightExtension } from "@/extensions/line-height";
 import { Ruler } from "./ruler";
 import { useLiveblocksExtension } from "@liveblocks/react-tiptap";
-import { useUpdateMyPresence } from "@liveblocks/react/suspense";
+import { useUpdateMyPresence, useStorage } from "@liveblocks/react/suspense";
 import { Threads } from "./threads";
+
+const DEFAULT_MARGIN = 56;
 
 interface EditorProps {
   initialContent?: string;
@@ -33,46 +36,41 @@ export const Editor = ({ initialContent }: EditorProps) => {
   const liveblocks = useLiveblocksExtension({
     initialContent,
     offlineSupport_experimental: true,
-    // Enable @mention support — Liveblocks uses resolveMentionSuggestions
-    // from LiveblocksProvider to fetch the candidate list as the user types.
     mentions: true,
   });
   const { setEditor } = useEditorStore();
   const updateMyPresence = useUpdateMyPresence();
 
+  // Read shared margins from Liveblocks Storage.
+  // These are the pixel values applied as left/right padding INSIDE the
+  // 816px editor canvas — the canvas itself never moves.
+  const leftMargin  = useStorage((root) => root.leftMargin)  ?? DEFAULT_MARGIN;
+  const rightMargin = useStorage((root) => root.rightMargin) ?? DEFAULT_MARGIN;
+
+  // Ref to the ProseMirror DOM node so we can update its inline style
+  // without recreating the editor instance.
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
   const editor = useEditor({
     immediatelyRender: false,
-
-    onCreate({ editor }) {
-      setEditor(editor);
-    },
-    onDestroy() {
-      setEditor(null);
-    },
-    onUpdate({ editor }) {
-      setEditor(editor);
-    },
-    onSelectionUpdate({ editor }) {
-      setEditor(editor);
-    },
-    onTransaction({ editor }) {
-      setEditor(editor);
-    },
-    onFocus({ editor }) {
-      setEditor(editor);
-    },
-    onBlur({ editor }) {
-      setEditor(editor);
-    },
-    onContentError({ editor }) {
-      setEditor(editor);
-    },
+    onCreate({ editor }) { setEditor(editor); },
+    onDestroy()          { setEditor(null);   },
+    onUpdate({ editor })          { setEditor(editor); },
+    onSelectionUpdate({ editor }) { setEditor(editor); },
+    onTransaction({ editor })     { setEditor(editor); },
+    onFocus({ editor })           { setEditor(editor); },
+    onBlur({ editor })            { setEditor(editor); },
+    onContentError({ editor })    { setEditor(editor); },
 
     editorProps: {
       attributes: {
-        style: "padding-left: 56px; padding-right: 56px;",
-        class:
-          "focus:outline-none print:border-0 bg-white border border-[#C7C7C7] flex flex-col min-h-[1054px] w-[816px] pt-10 pr-14 pb-10 cursor-text",
+        // Initial padding matches the default margin.
+        // We update this via the DOM ref effect below on every Storage change.
+        style: `padding-left: ${DEFAULT_MARGIN}px; padding-right: ${DEFAULT_MARGIN}px;`,
+        class: [
+          "focus:outline-none print:border-0 bg-white border border-[#C7C7C7]",
+          "flex flex-col min-h-[1054px] w-[816px] pt-10 pb-10 cursor-text",
+        ].join(" "),
       },
     },
     extensions: [
@@ -85,18 +83,10 @@ export const Editor = ({ initialContent }: EditorProps) => {
       }),
       FontFamily,
       TextStyle,
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
       Color,
-      Highlight.configure({
-        multicolor: true,
-      }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        defaultProtocol: "https",
-      }),
+      Highlight.configure({ multicolor: true }),
+      Link.configure({ openOnClick: false, autolink: true, defaultProtocol: "https" }),
       Underline,
       Table,
       TableHeader,
@@ -104,12 +94,21 @@ export const Editor = ({ initialContent }: EditorProps) => {
       TableCell,
       Image,
       ImageResize,
-      TaskItem.configure({
-        nested: true,
-      }),
+      TaskItem.configure({ nested: true }),
       TaskList,
     ],
   });
+
+  // Apply margin changes directly to the ProseMirror DOM element.
+  // This runs whenever leftMargin or rightMargin changes in Storage —
+  // i.e. when any collaborator drags a ruler marker.
+  // The editor canvas (w-[816px]) stays fixed; only the inner padding changes.
+  useEffect(() => {
+    const el = editorContainerRef.current?.querySelector<HTMLElement>(".ProseMirror");
+    if (!el) return;
+    el.style.paddingLeft  = `${leftMargin}px`;
+    el.style.paddingRight = `${rightMargin}px`;
+  }, [leftMargin, rightMargin]);
 
   return (
     <div
@@ -122,7 +121,12 @@ export const Editor = ({ initialContent }: EditorProps) => {
       }}
     >
       <Ruler />
-      <div className="min-w-max flex justify-center w-[816px] py-4 print:py-0 mx-auto print:w-full print:min-w-0">
+      {/* This wrapper is fixed at the page width — it never shifts.
+          Only the inner ProseMirror padding changes when margins move. */}
+      <div
+        ref={editorContainerRef}
+        className="min-w-max flex justify-center w-[816px] py-4 print:py-0 mx-auto print:w-full print:min-w-0"
+      >
         <EditorContent editor={editor} />
         <Threads editor={editor} />
       </div>

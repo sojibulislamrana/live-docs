@@ -1,124 +1,123 @@
-import { useRef, useState } from "react";
+"use client";
+
+import { useRef, useState, useCallback } from "react";
 import { FaCaretDown } from "react-icons/fa";
+import { useStorage, useMutation } from "@liveblocks/react/suspense";
+
+const PAGE_WIDTH    = 816;
+const DEFAULT_MARGIN = 56;
+const MIN_SPACE     = 100; // minimum content width
 
 const markers = Array.from({ length: 83 }, (_, i) => i);
 
 export const Ruler = () => {
-  const [leftMargin, setLeftMargin] = useState(56);
-  const [rightMargin, setRightMargin] = useState(56);
+  const leftMargin  = useStorage((root) => root.leftMargin)  ?? DEFAULT_MARGIN;
+  const rightMargin = useStorage((root) => root.rightMargin) ?? DEFAULT_MARGIN;
 
-  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
+  const setLeftMargin = useMutation(({ storage }, v: number) => {
+    storage.set("leftMargin", v);
+  }, []);
+
+  const setRightMargin = useMutation(({ storage }, v: number) => {
+    storage.set("rightMargin", v);
+  }, []);
+
+  const [isDraggingLeft,  setIsDraggingLeft]  = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
 
   const rulerRef = useRef<HTMLDivElement>(null);
 
-  const handleLeftMouseDown = () => {
-    setIsDraggingLeft(true);
-  };
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isDraggingLeft && !isDraggingRight) return;
+      const rect     = rulerRef.current!.getBoundingClientRect();
+      const x        = Math.max(0, Math.min(PAGE_WIDTH, e.clientX - rect.left));
 
-  const handleRightMouseDown = () => {
-    setIsDraggingRight(true);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const PAGE_WIDTH = 816;
-    const MINIMUM_SPACE = 100;
-
-    if ((isDraggingLeft || isDraggingRight) && rulerRef.current) {
-      const container = rulerRef.current.querySelector("#ruler-container");
-
-      if (container) {
-        const containerRect = container.getBoundingClientRect();
-        const relativeX = e.clientX - containerRect.left;
-        const rawPosition = Math.max(0, Math.min(816, relativeX));
-
-        if (isDraggingLeft) {
-          const maxLeftPosition = PAGE_WIDTH - rightMargin - MINIMUM_SPACE;
-          const newLeftPosition = Math.min(rawPosition, maxLeftPosition);
-          setLeftMargin(newLeftPosition); // TODO: make collaborative
-        } else if (isDraggingRight) {
-          const maxRightPosition = PAGE_WIDTH - leftMargin + MINIMUM_SPACE;
-          const newRightPosition = Math.max(PAGE_WIDTH - rawPosition, 0);
-          const constrainedRightPosition = Math.min(
-            newRightPosition,
-            maxRightPosition,
-          );
-          setRightMargin(constrainedRightPosition);
-        }
+      if (isDraggingLeft) {
+        const max = PAGE_WIDTH - rightMargin - MIN_SPACE;
+        setLeftMargin(Math.min(x, max));
+      } else {
+        const fromRight = PAGE_WIDTH - x;
+        const max       = PAGE_WIDTH - leftMargin - MIN_SPACE;
+        setRightMargin(Math.min(Math.max(0, fromRight), max));
       }
-    }
-  };
+    },
+    [isDraggingLeft, isDraggingRight, leftMargin, rightMargin, setLeftMargin, setRightMargin],
+  );
 
-  const handleMouseUp = () => {
+  const stopDrag = useCallback(() => {
     setIsDraggingLeft(false);
     setIsDraggingRight(false);
-  };
-
-  const handleLeftDoubleClick = () => {
-    setLeftMargin(56);
-  };
-  const handleRightDoubleClick = () => {
-    setRightMargin(56);
-  };
+  }, []);
 
   return (
     <div
       ref={rulerRef}
       onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      className="w-[816px] mx-auto h-6 border-b border-gray-300 flex items-end relative select-none print:hidden"
+      onMouseUp={stopDrag}
+      onMouseLeave={stopDrag}
+      className="w-[816px] mx-auto h-6 border-b border-gray-300 relative select-none print:hidden bg-white overflow-hidden"
     >
-      <div className="w-full h-full relative" id="ruler-container">
-        <Marker
-          position={leftMargin}
-          isLeft={true}
-          isDragging={isDraggingLeft}
-          onMouseDown={handleLeftMouseDown}
-          onDoubleClick={handleLeftDoubleClick}
-        />
-        <Marker
-          position={rightMargin}
-          isLeft={false}
-          isDragging={isDraggingRight}
-          onMouseDown={handleRightMouseDown}
-          onDoubleClick={handleRightDoubleClick}
-        />
-        <div className="absolute insets-x-0 bottom-0 h-full">
-          <div className="relative h-full w-[816px]">
-            {markers.map((marker) => {
-              const position = (marker * 816) / 82;
-              return (
-                <div
-                  key={marker}
-                  className="absolute bottom-0"
-                  style={{ left: `${position}px` }}
-                >
-                  {marker % 10 === 0 && (
-                    <>
-                      <div className="absolute bottom-0 w-[1px] h-2 bg-neutral-500" />
-                      <span className="absolute bottom-2 text-[10px] text-neutral-500 transform -translate-x-1/2">
-                        {marker / 10 + 1}
-                      </span>
-                    </>
-                  )}
-                  {marker % 5 === 0 && marker % 10 !== 0 && (
-                    <div className="absolute bottom-0 w-[1px] h-1.5 bg-neutral-500"></div>
-                  )}
-                  {marker % 5 !== 0 && (
-                    <div className="absolute bottom-0 w-[1px] h-1.5 bg-neutral-500"></div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      {/* ── Shaded margin zones ── */}
+      {/* Left: from 0 → leftMargin */}
+      <div
+        className="absolute top-0 left-0 h-full bg-[#efefef]"
+        style={{ width: leftMargin }}
+      />
+      {/* Right: from (PAGE_WIDTH - rightMargin) → PAGE_WIDTH */}
+      <div
+        className="absolute top-0 right-0 h-full bg-[#efefef]"
+        style={{ width: rightMargin }}
+      />
+
+      {/* ── Tick marks ── */}
+      <div className="absolute inset-0 pointer-events-none">
+        {markers.map((marker) => {
+          const x       = (marker / 82) * PAGE_WIDTH;
+          const isMajor = marker % 10 === 0;
+          const isMid   = marker % 5  === 0 && !isMajor;
+
+          return (
+            <div key={marker} className="absolute bottom-0" style={{ left: x }}>
+              {isMajor && (
+                <>
+                  <div className="absolute bottom-0 w-px h-2.5 bg-neutral-500" />
+                  <span className="absolute bottom-3 text-[9px] leading-none text-neutral-400 -translate-x-1/2 whitespace-nowrap">
+                    {marker / 10 + 1}
+                  </span>
+                </>
+              )}
+              {isMid  && <div className="absolute bottom-0 w-px h-2 bg-neutral-400" />}
+              {!isMajor && !isMid && <div className="absolute bottom-0 w-px h-1 bg-neutral-300" />}
+            </div>
+          );
+        })}
       </div>
+
+      {/* ── Left margin caret ── */}
+      <MarkerCaret
+        position={leftMargin}
+        isLeft
+        isDragging={isDraggingLeft}
+        onMouseDown={() => setIsDraggingLeft(true)}
+        onDoubleClick={() => setLeftMargin(DEFAULT_MARGIN)}
+      />
+
+      {/* ── Right margin caret ── */}
+      <MarkerCaret
+        position={rightMargin}
+        isLeft={false}
+        isDragging={isDraggingRight}
+        onMouseDown={() => setIsDraggingRight(true)}
+        onDoubleClick={() => setRightMargin(DEFAULT_MARGIN)}
+      />
     </div>
   );
 };
 
-interface MarkerProps {
+// ─── Caret ────────────────────────────────────────────────────────────────────
+
+interface MarkerCaretProps {
   position: number;
   isLeft: boolean;
   isDragging: boolean;
@@ -126,31 +125,36 @@ interface MarkerProps {
   onDoubleClick: () => void;
 }
 
-const Marker = ({
+const MarkerCaret = ({
   position,
   isLeft,
   isDragging,
   onMouseDown,
   onDoubleClick,
-}: MarkerProps) => {
+}: MarkerCaretProps) => {
+  // Place the caret so its visual tip sits exactly on the margin boundary.
+  // The caret icon is 12px wide → offset by 6px to centre it.
+  const style: React.CSSProperties = isLeft
+    ? { left: position - 6 }
+    : { right: position - 6 };
+
   return (
     <div
-      className="absolute top-0 w-4 h-full cursor-ew-resize z-[5] group -ml-2"
-      style={{ [isLeft ? "left" : "right"]: `${position}px` }}
-      onMouseDown={onMouseDown}
+      className="absolute top-0 z-10 cursor-ew-resize"
+      style={{ ...style, width: 12, height: "100%" }}
+      onMouseDown={(e) => { e.preventDefault(); onMouseDown(); }}
       onDoubleClick={onDoubleClick}
+      title="Drag to adjust margin · Double-click to reset"
     >
-      <FaCaretDown className="absolute left-1/2 h-full top-0 fill-blue-500 transform -translate-x-1/2" />
-      <div
-        className="absolute left-1/2 top-4 transform -translate-x-1/2 transition-opacity duration-150"
-        style={{
-          height: "100vh",
-          width: "1px",
-          transform: "scaleX(0.5)",
-          backgroundColor: "#3b72f6",
-          display: isDragging ? "block" : "none",
-        }}
-      ></div>
+      <FaCaretDown className="fill-blue-500" size={12} />
+
+      {/* Vertical guide line shown while dragging */}
+      {isDragging && (
+        <div
+          className="absolute top-full left-1/2 -translate-x-1/2 w-px bg-blue-400 pointer-events-none"
+          style={{ height: "100vh", opacity: 0.5 }}
+        />
+      )}
     </div>
   );
 };

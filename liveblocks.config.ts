@@ -8,10 +8,12 @@ declare global {
       cursor: { x: number; y: number } | null;
     };
 
-    // The Storage tree for the room, for useMutation, useStorage, etc.
+    // The Storage tree for the room — synced in real-time to every collaborator.
     Storage: {
-      // Document content is synced via the Liveblocks TipTap extension;
-      // no manual storage keys are needed.
+      // Left margin in pixels (default 56 ≈ 0.7 inch at 96dpi).
+      leftMargin: number;
+      // Right margin in pixels (default 56).
+      rightMargin: number;
     };
 
     // Custom user info set when authenticating with a secret key.
