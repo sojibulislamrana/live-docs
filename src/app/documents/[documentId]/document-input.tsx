@@ -2,6 +2,7 @@
 
 import { useMutation } from "convex/react";
 import { BsCloudCheck, BsCloudSlash } from "react-icons/bs";
+import { LoaderIcon } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { api } from "../../../../convex/_generated/api";
@@ -14,17 +15,15 @@ interface DocumentInputProps {
 }
 
 export const DocumentInput = ({ title, id }: DocumentInputProps) => {
-  const status = useStatus();
-  const [value, setValue] = useState(title);
+  const status   = useStatus();
+  const [value, setValue]       = useState(title);
   const [isPending, setIsPending] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const mutate = useMutation(api.document.updateById);
+  const mutate   = useMutation(api.document.updateById);
 
-  useEffect(() => {
-    setValue(title);
-  }, [title]);
+  useEffect(() => { setValue(title); }, [title]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
@@ -33,38 +32,30 @@ export const DocumentInput = ({ title, id }: DocumentInputProps) => {
   const onSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
     const nextTitle = value.trim() || "Untitled document";
-    if (nextTitle === title) {
-      setIsEditing(false);
-      return;
-    }
+    if (nextTitle === title) { setIsEditing(false); return; }
     setIsPending(true);
     mutate({ id, title: nextTitle })
-      .then(() => {
-        toast({ title: "Document renamed" });
-        setIsEditing(false);
-      })
+      .then(() => { setIsEditing(false); })
       .catch(() => {
         toast({
           variant: "destructive",
           title: "Could not rename document",
-          description:
-            "You need to be the owner or a member of this document's organization.",
+          description: "You need to be the owner or a member of this document's organization.",
         });
       })
       .finally(() => setIsPending(false));
   };
 
-  const showLoader =
-    isPending || status === "connecting" || status === "reconnecting";
-  const showError = status === "disconnected";
+  // Show spinner while saving OR while Liveblocks is connecting/reconnecting
+  const showLoader = isPending || status === "connecting" || status === "reconnecting";
+  const showError  = status === "disconnected";
 
   return (
     <div className="flex items-center gap-2">
       {isEditing ? (
         <form onSubmit={onSubmit} className="relative w-fit max-w-[50ch]">
-          <span className="invisible whitespace-pre px-1.5 text-lg">
-            {value || " "}
-          </span>
+          {/* invisible ghost text keeps the input the right width */}
+          <span className="invisible whitespace-pre px-1.5 text-lg">{value || " "}</span>
           <input
             ref={inputRef}
             value={value}
@@ -84,8 +75,15 @@ export const DocumentInput = ({ title, id }: DocumentInputProps) => {
           {title}
         </span>
       )}
-      {showError && <BsCloudSlash className="size-4" />}
-      {!showError && !showLoader && <BsCloudCheck />}
+
+      {/* Status indicator */}
+      {showError  && <BsCloudSlash className="size-4 text-destructive" title="Disconnected" />}
+      {showLoader && !showError && (
+        <LoaderIcon className="size-4 animate-spin text-muted-foreground" />
+      )}
+      {!showLoader && !showError && (
+        <BsCloudCheck className="size-4 text-muted-foreground" title="Saved" />
+      )}
     </div>
   );
 };

@@ -25,6 +25,10 @@ import { Ruler } from "./ruler";
 import { useLiveblocksExtension } from "@liveblocks/react-tiptap";
 import { useUpdateMyPresence, useStorage } from "@liveblocks/react/suspense";
 import { Threads } from "./threads";
+import Subscript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
+import BulletList from "@tiptap/extension-bullet-list";
+import OrderedList from "@tiptap/extension-ordered-list";
 
 const DEFAULT_MARGIN = 56;
 
@@ -53,6 +57,7 @@ export const Editor = ({ initialContent }: EditorProps) => {
 
   const editor = useEditor({
     immediatelyRender: false,
+    autofocus: "end",   // Focus at end of doc when editor mounts
     onCreate({ editor }) { setEditor(editor); },
     onDestroy()          { setEditor(null);   },
     onUpdate({ editor })          { setEditor(editor); },
@@ -75,7 +80,17 @@ export const Editor = ({ initialContent }: EditorProps) => {
     },
     extensions: [
       liveblocks,
-      StarterKit.configure({ history: false }),
+      StarterKit.configure({
+        history: false,
+        // Disable built-in bullet/ordered list so we register our own
+        // versions below with input rules removed.
+        bulletList: false,
+        orderedList: false,
+      }),
+      // Register list extensions without markdown input rules so that
+      // typing '-' or '1.' doesn't auto-convert to a list mid-sentence.
+      BulletList.extend({ addInputRules: () => [] }),
+      OrderedList.extend({ addInputRules: () => [] }),
       FontSizeExtension,
       LineHeightExtension.configure({
         types: ["heading", "paragraph"],
@@ -96,6 +111,8 @@ export const Editor = ({ initialContent }: EditorProps) => {
       ImageResize,
       TaskItem.configure({ nested: true }),
       TaskList,
+      Subscript,
+      Superscript,
     ],
   });
 

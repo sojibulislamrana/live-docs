@@ -52,10 +52,21 @@ const AvatarsInner = () => {
   const self   = useSelf();
 
   // Build the list: current user first, then others.
-  const all = [
-    ...(self ? [{ id: self.id, info: self.info, isSelf: true }] : []),
-    ...others.map((o) => ({ id: o.id, info: o.info, isSelf: false })),
-  ];
+  // Deduplicate by ID to prevent the "two children with same key" warning
+  // that occurs when self briefly also appears in the others list.
+  const seen = new Set<string>();
+  const all: { id: string; info: typeof self.info; isSelf: boolean }[] = [];
+
+  if (self) {
+    seen.add(self.id);
+    all.push({ id: self.id, info: self.info, isSelf: true });
+  }
+  for (const o of others) {
+    if (!seen.has(o.id)) {
+      seen.add(o.id);
+      all.push({ id: o.id, info: o.info, isSelf: false });
+    }
+  }
 
   const shown    = all.slice(0, MAX_SHOWN);
   const overflow = all.length - MAX_SHOWN;
