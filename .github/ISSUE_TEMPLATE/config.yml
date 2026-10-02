@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Live Doc — Live Demo
+    url: https://live-docs-mu-nine.vercel.app/
+    about: Try the hosted version of the project.
+  - name: Discussions
+    url: https://github.com/sojibulislamrana/live-docs/discussions
+    about: Ask questions and share ideas with the community.

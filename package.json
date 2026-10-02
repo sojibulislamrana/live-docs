@@ -1,12 +1,43 @@
 {
   "name": "live-doc",
   "version": "0.1.0",
+  "description": "A lightweight real-time collaborative document editor built with Next.js, Convex, Clerk, and Liveblocks.",
+  "license": "MIT",
   "private": true,
+  "keywords": [
+    "documents",
+    "real-time",
+    "collaboration",
+    "editor",
+    "richtext",
+    "tiptap",
+    "liveblocks",
+    "convex",
+    "clerk",
+    "nextjs",
+    "vercel"
+  ],
+  "author": {
+    "name": "Sojibul Islam Rana",
+    "url": "https://github.com/sojibulislamrana"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sojibulislamrana/live-docs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sojibulislamrana/live-docs/issues"
+  },
+  "homepage": "https://github.com/sojibulislamrana/live-docs#readme",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.5.1",
