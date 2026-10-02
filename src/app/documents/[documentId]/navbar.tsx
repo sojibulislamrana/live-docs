@@ -62,9 +62,6 @@ import { RenameDialog } from "@/components/rename-dialog";
 import { RemoveDialog } from "@/components/remove-dialog";
 import { Avatars } from "./avatar";
 import { Inbox } from "./inbox";
-import { openFileImport } from "@/lib/import-file";
-import { useState } from "react";
-import { LoaderIcon } from "lucide-react";
 
 interface NavbarProps {
   title: string;
